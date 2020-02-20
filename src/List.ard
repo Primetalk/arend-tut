@@ -1,0 +1,31 @@
+\import Arith.Nat
+\import Logic
+\import Paths
+
+\data List (A : \Type)
+  | nil
+  | cons A (List A)
+
+\func reverse{A : \Type}(as : List A) : List A =>
+  reverse0 as nil
+  \where {
+    \func reverse0{A : \Type}(as res : List A) : List A \elim as
+      | nil => res
+      | cons a l => reverse0 l (cons a res)
+  }
+
+\func length1 {A : \Type} (xs : List A) : Nat
+  | nil => 0
+  | cons _ l => length1 l
+
+\func length1==0 {A : \Type} (xs : List A) : length1(xs) = 0
+  | nil => idp
+  | cons a l => length1==0(l)
+
+\func length {A : \Type} (xs : List A) : Nat
+  | nil => 0
+  | cons _ l => suc (length l)
+
+\func length=0->nil {A : \Type} (xs : List A) (length-xs=0 : length(xs) = 0) : xs = nil \elim xs
+  | nil      => idp
+  | cons a l => absurd (suc/=0 (idp *> length-xs=0))
