@@ -1,0 +1,39 @@
+\import Data.Bool
+\import Data.Or
+\import Paths
+
+\data List (A : \Type) | nil | cons A (List A)
+
+-- Exercise 4: Implement function filter and prove that it is correct, that is that the following holds:
+-- a) filter p xs is a sublist of xs,
+-- b) All elements of filter p xs satisfy the predicate p,
+-- c) Any sublist of xs with property (b) is a sublist of filter p xs.
+\func filter {A : \Type} (as : List A) (p : A -> Bool) : List A \elim as
+  | nil => nil
+  | cons a as => \case p a \with {
+    | true  => cons a as
+    | false =>        as
+  }
+
+-- Filtered is a property of two lists if ys is a result of filtering xs according to predicate p
+\data Filtered {A : \Type} (xs : List A) (p : A -> Bool) (ys : List A) \elim xs, ys
+  | nil,        nil        => filtered-nil
+  | cons x xs', ys'        => filtered-out (p x = false)         (Filtered xs' p ys' )
+  | cons x xs', cons y ys' => filtered-in  (p x = true ) (x = y) (Filtered xs' p ys')
+
+\func filter-with-proof-filtered {A : \Type} (as : List A) (p : A -> Bool) :
+  \Sigma (fl : List A) (Filtered as p fl) \elim as
+  | nil => (nil, filtered-nil)
+  | cons a as =>
+    \let
+      | fl => filter-with-proof-filtered as p
+      | pa => p a
+    \in \case f(pa) \with {
+      | inr pa=false => (       fl.1, filtered-out pa=false     fl.2)
+      | inl pa=true  => (cons a fl.1, filtered-in  pa=true  idp fl.2)
+    }
+  \where{
+    \func f (b : Bool) : (b = true) `Or` (b = false)
+      | true  => inl idp
+      | false => inr idp
+  }
