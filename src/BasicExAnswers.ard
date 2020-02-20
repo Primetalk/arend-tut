@@ -1,0 +1,82 @@
+\import Basics
+\import BasicsEx
+\open Nat
+
+-- 2. Define in Arend the function 'if', which takes a boolean value b and two elements of an arbitrary type A
+--    and return the first element when b equals to true and the second one otherwise.
+
+\func if {A : \Type} (b : Bool) (then else : A) : A \elim b
+  | true  => then
+  | false => else
+
+-- 3. Define || via 'if'.
+
+\func \infixr 2 || (x y : Bool) : Bool => if x true y
+
+-- 4. Define the power and the factorial functions for natural numbers.
+
+\func \infixr 8 ^ (x y : Nat) : Nat \elim y
+  | 0     => 1
+  | suc y' => x * (x ^ y')
+
+\func fac (x : Nat) : Nat
+  | 0     => 1
+  | suc n => (n + 1) * (fac n)
+
+-- 5. Define mod and gcd.
+
+-- \func mod' (x y : Nat) : Nat => if (x < y) x (mod' (x - y) y)
+\func mod' (x y : Nat) : Nat => mod'' x x y
+  \where {
+    \func mod'' (s x y : Nat) : Nat \elim s
+      | 0 => 0
+      | suc n => if (x < y) x (mod'' n (x - y) y)
+  }
+
+-- \func gcd (x y : Nat) => {?}
+
+\func gcd (x y : Nat) : Nat => gcd' x x y
+  \where {
+    \func gcd' (s x y : Nat) : Nat \elim s
+      | 0 => 0
+      | suc n => \case x \with {
+        | 0 => y
+        | _ => if (x < y) (gcd' n (y - x) x) (gcd' n (x - y) y)
+      }
+  }
+
+\data List (A : \Type) | nil | \infixr 5 :: A (List A)
+
+\func map {A B : \Type} (f : A -> B) (xs : List A) : List B \elim xs
+  | nil    => nil
+  | :: a l => f a :: map f l
+
+
+-- 7. Define the transpose function.
+--    It takes a list of lists considered as a matrix and returns a list of lists which represents the transposed matrix.
+--    Example:
+--    transpose ((1 :: 2 :: 3 :: nil) :: (4 :: 5 :: 6 :: nil)) == ((1 :: 4 :: nil) :: (2 :: 5 :: nil) :: (3 :: 6 :: nil))
+
+\func transpose {A : \Type} (m : List (List A)) : List (List A) =>
+  transpose' m nil
+  \where {
+    \func transpose' {A : \Type} (m acc : List (List A)) : List (List A) \elim m
+      | nil    => reverse acc
+      | :: a l => transpose' l (zipF (::) a acc)
+
+    \func reverse{A : \Type}(as : List A) : List A =>
+      reverse0 as nil
+      \where {
+        \func reverse0{A : \Type}(as res : List A) : List A \elim as
+          | nil => res
+          | :: a l => reverse0 l (a :: res)
+      }
+
+    \func zip {A B : \Type} (as : List A) (bs : List B) : List (\Sigma A B)  =>
+      zipF (\lam a b => (a,b)) as bs
+
+    \func zipF {A B C : \Type} (f : A -> B -> C) (as : List A) (bs : List B) : List C \elim as, bs
+      | nil, _ => nil
+      | _, nil => nil
+      | :: a as', :: b bs' => (f a b) :: zipF f as' bs'
+  }
