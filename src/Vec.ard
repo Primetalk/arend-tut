@@ -1,0 +1,16 @@
+
+\data Vec (A : \Type) (n : Nat) \elim n
+  | 0     => fnil
+  | suc n => fcons A (Vec A n)
+
+\func vec (A : \Type) (n : Nat) : \Type => Vec A n
+
+\func prepend {A : \Type} {n : Nat}
+              (v : vec A n) (a : A) : vec A (n Nat.+ 1) =>
+  fcons a v
+
+\func head {A : \Type} {n : Nat} (xs : Vec A (suc n)) : A
+  | fcons x _ => x
+
+\func tail {A : \Type} {n : Nat} (xs : Vec A (suc n)) : Vec A n
+  | fcons _ xs => xs
