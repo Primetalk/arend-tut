@@ -33,7 +33,11 @@
 --    Its proof also constructs a proposition which is true if and only if it is false.
 --    Prove that more generally the existence of any such proposition implies a contradiction.
 
-\func t7 {P : \Type} (f : P -> Not P) (g : Not P -> P) : Empty => {?}
+\func t7 {P : \Type} (f : P -> Not P) (g : Not P -> P) : Empty =>
+  \let
+    | not-p => \lam p => f p p
+    | p => g not-p
+  \in f p p
 
 -- 8. Prove that if, for every x : Nat, P x is true, then there exists x : Nat such that P x is true.
 
