@@ -8,12 +8,17 @@
 -- a) filter p xs is a sublist of xs,
 -- b) All elements of filter p xs satisfy the predicate p,
 -- c) Any sublist of xs with property (b) is a sublist of filter p xs.
+-- d) Order is preserved
 \func filter {A : \Type} (as : List A) (p : A -> Bool) : List A \elim as
   | nil => nil
-  | cons a as => \case p a \with {
-    | true  => cons a as
-    | false =>        as
-  }
+  | cons a as =>
+  \let
+    | filtered-tail => filter as p
+  \in
+    \case p a \with {
+        | true  => cons a filtered-tail
+        | false =>        filtered-tail
+      }
 
 -- Filtered is a property of two lists if ys is a result of filtering xs according to predicate p
 \data Filtered {A : \Type} (xs : List A) (p : A -> Bool) (ys : List A) \elim xs, ys
