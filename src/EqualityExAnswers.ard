@@ -1,0 +1,183 @@
+\import Data.Bool (So)
+\import Equality
+\import Paths (*>)
+\open Nat (+)
+
+-- 1. Define congruence for functions with two arguments via transport.
+--    It is allowed to use any functions defined via transport.
+
+\func pmap2 {A B C : \Type} (f : A -> B -> C) {a a' : A} (p : a = a') {b b' : B} (q : b = b') : f a b = f a' b'
+  =>  \let
+    | fab'=fa'b' => transport (\lam x => f a b' = f x b') p idp
+    | fab=fab'   => transport (\lam x => f a b = f a x) q idp
+    \in trans fab=fab' fab'=fa'b'
+--    \in  fab=fab' *> fab'=fa'b'
+
+-- 2. Prove that 'transport' can be defined via 'pmap' and 'repl' and vice versa.
+-- The function 'repl' says that if two types are equal then there exists a function between them.
+
+-- Define 'repl' via 'transport'.
+\func repl {A B : \Type} (p : A = B) (a : A) : B
+  => transport (\lam x => x) p a
+
+-- Define 'transport' via 'repl' and 'pmap'.
+\func transport' {A : \Type} (B : A -> \Type) {a a' : A} (p : a = a') (b : B a) : B a'
+  => repl (pmap B p) b
+
+-- 3. Prove that left = right without using 'transport' or 'coe'.
+
+\func left=right : left = right
+  => path (\lam x => x)
+
+-- 4. Prove that a = a' and b = b' implies (a,b) = (a',b') without using 'transport'.
+
+\func pairEq {A B : \Type} {a a' : A} {b b' : B} (p : a = a') (q : b = b') : (a,b) = (a',b')
+  => path (\lam i => (p @ i, q @ i))
+
+-- 5. Prove that p = p' implies p.1 = p'.1 without using 'transport'.
+
+\func projEq {A : \Type} (B : A -> \Type) {p p' : \Sigma (x : A) (B x)} (t : p = p') : p.1 = p'.1
+  => path (\lam i => (t @ i).1)
+
+-- 6. Prove that (\lam x => not (not x)) = (\lam x => x).
+
+\func not (b : Bool) : Bool
+  | true => false
+  | false => true
+
+\func notNotId : (\lam x => not (not x)) = (\lam x => x)
+  => funExt Bid eq
+      \where {
+        \func Bid (_ : Bool) : \Type => Bool
+        \func f (b : Bool) : Bool => not (not b)
+        \func g (b : Bool) : Bool => b
+        \func eq (b : Bool) : f b = g b
+          | false => idp
+          | true  => idp
+      }
+
+-- 7. Define factorial via Nat-rec (i.e., without recursion and pattern matching).
+
+\func factorial : Nat -> Nat => Nat-rec Nat 1 (*)
+
+-- 8. Prove associativity of Nat.+ via Nat-elim (i.e., without recursion and pattern matching).
+
+\func Nat-+-assoc (a b c : Nat) : (a + b) + c = a + (b + c)
+  => Nat-elim
+      (\lam c => (a + b) + c = a + (b + c))
+      idp
+      (\lam c assoc1 => pmap suc assoc1)
+      c
+
+-- 9. Define recursor and eliminator for D.
+
+\data D
+  | con1 Nat
+  | con2 D D
+  | con3 (Nat -> D)
+
+\func D-elim (P : D -> \Type)
+             (con1' : \Pi (n  : Nat) -> P (con1 n))
+             (con2' : \Pi (d d1 : D) -> P (con2 d d1))
+             (con3' : \Pi (d-of-nat : Nat -> D) -> P (con3 d-of-nat))
+             (d : D) : P d \elim d
+  | con1 n        => con1' n
+  | con2 d d1     => con2' d d1
+  | con3 d-of-nat => con3' d-of-nat
+
+\func D-rec (P : \Type)
+            (con1' : Nat -> P)
+            (con2' : D -> D -> P)
+            (con3' : (Nat -> D) -> P)
+            (d : D) : P \elim d
+  | con1 n        => con1' n
+  | con2 d d1     => con2' d d1
+  | con3 d-of-nat => con3' d-of-nat
+
+-- 10. Define recursor and eliminator for List.
+
+\data List (A : \Type) | nil | cons A (List A)
+
+\func List-elim {A : \Type} (P : List A -> \Type)
+                (nil' : P nil)
+                (cons' : \Pi(a : A) (as : List A) -> P (cons a as) )
+                (as : List A) : P as \elim as
+  | nil       => nil'
+  | cons a as => cons' a as
+
+\func List-rec {A : \Type} (P : \Type)
+                (nil' : P)
+                (cons' : A -> List A -> P )
+                (as : List A) : P \elim as
+  | nil       => nil'
+  | cons a as => cons' a as
+
+-- 11. We defined transport via coe.
+--     Define a special case of coe via transport.
+--     Is it possible to define transport via coe0?
+
+\func coe0 (A : I -> \Type) (a : A left) : A right
+  => transport A (left=right) a
+
+-- 12. Define a function B right -> B left.
+
+\func Itr' {B : I -> \Type} (b : B right) : B left
+  => transport B (inv left=right) b
+
+-- 13. Prove that 0 does not equal to suc x.
+
+--\func zero/=suc1 (x : Nat) (p : 0 = suc x) : Empty
+--  => absurd (transport IsZero p isZero)
+--  \where {
+--    \data IsZero (n : Nat) \with
+--      | zero => isZero
+--    \func absurd {x : Nat} (p : IsZero (suc x)) : Empty \elim p
+--  }
+-- see Nat.ard for an example implementation
+\func zero/=suc (x : Nat) (p : 0 = suc x) : Empty
+  =>
+    \let
+    | f (x : Nat) (p : 0 = suc x) ( i : I) : \Type
+        => \case p @ i \with { -- we pattern match on the parts of the equation. And return the types of the equation
+          | 0     => Nat   -- for the left  side it's a natural number
+          | suc _ => Empty -- for the right side it's empty
+        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
+        }
+    | A => f x p
+    \in
+    coe A
+        0      -- we know A left is 0 and it's Nat.
+        right  -- we can find A right using coe. And that value will be Empty according to the definition of `f`
+
+--\func zero/=suc3 (x : Nat) (p : 0 = suc x) : Empty
+--  =>
+--    \let
+--      | f (x : Nat) (p : 0 = suc x) ( i : I) : \Type
+--      => \case p @ i \with { -- we pattern match on the parts of the equation. And return the types of the equation
+--          | 0     => Nat   -- for the left  side it's natural number
+--          | suc _ => Empty -- for the right side it's empty
+--          -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
+--        }
+--      | B => f x p
+--    \in transport {I} B {0 (suc x)} p right
+
+-- 14. Prove that fac does not equal to suc.
+
+\open Nat(*)
+
+\func fac (n : Nat) : Nat
+  | 0 => 1
+  | suc n => suc n * fac n
+
+\func fac/=suc (p : fac = suc) : Empty =>
+  \let
+    | A (i : I) : \Type
+    => \case (p @ i) 1 \with { -- we pattern match on the parts of the equation. And return the types of the equation
+        | 2 => Empty      -- for the right side it's empty (suc 1 = 2)
+        | _ => Nat -> Nat -- for the other values it's a natural number function
+        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
+      }
+  \in
+    coe A
+      fac    -- we know      A left is fac  and it's Nat -> Nat (because fac 1 \= 2).
+      right  -- we can find  A right using coe. And that value will be Empty according to the definition of `A`, because suc 1 = 2
