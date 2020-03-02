@@ -134,21 +134,19 @@
 --    \func absurd {x : Nat} (p : IsZero (suc x)) : Empty \elim p
 --  }
 -- see Nat.ard for an example implementation
-\func zero/=suc (x : Nat) (p : 0 = suc x) : Empty
-  =>
-    \let
-    | f (x : Nat) (p : 0 = suc x) ( i : I) : \Type
-        => \case p @ i \with { -- we pattern match on the parts of the equation. And return the types of the equation
-          | 0     => Nat   -- for the left  side it's a natural number
-          | suc _ => Empty -- for the right side it's empty
-        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
-        }
-    | A => f x p
-    \in
-    coe A
-        0      -- we know A left is 0 and it's Nat.
-        right  -- we can find A right using coe. And that value will be Empty according to the definition of `f`
-
+--\func zero/=suc2 (x : Nat) (p : 0 = suc x) : Empty
+--  =>
+--    \let
+--    | f (x : Nat) (p : 0 = suc x) ( i : I) : \Type
+--        => \case p @ i \with { -- we pattern match on the parts of the equation. And return the types of the equation
+--          | 0     => Nat   -- for the left  side it's a natural number
+--          | suc _ => Empty -- for the right side it's empty
+--        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
+--        }
+--    \in
+--    coe A
+--        0      -- we know A left is 0 and it's Nat.
+--        right  -- we can find A right using coe. And that value will be Empty according to the definition of `f`
 --\func zero/=suc3 (x : Nat) (p : 0 = suc x) : Empty
 --  =>
 --    \let
@@ -161,23 +159,40 @@
 --      | B => f x p
 --    \in transport {I} B {0 (suc x)} p right
 
+\func zero/=suc (x : Nat) (p : 0 = suc x) : Empty
+  => transport eqZero p unit
+  \where {
+    \func eqZero (x : Nat) : \Type
+      | zero  => Unit
+      | suc _ => Empty
+  }
+
 -- 14. Prove that fac does not equal to suc.
 
 \open Nat(*)
 
 \func fac (n : Nat) : Nat
-  | 0 => 1
+  | 0     => 1
   | suc n => suc n * fac n
 
-\func fac/=suc (p : fac = suc) : Empty =>
-  \let
-    | A (i : I) : \Type
-    => \case (p @ i) 1 \with { -- we pattern match on the parts of the equation. And return the types of the equation
-        | 2 => Empty      -- for the right side it's empty (suc 1 = 2)
-        | _ => Nat -> Nat -- for the other values it's a natural number function
-        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
-      }
-  \in
-    coe A
-      fac    -- we know      A left is fac  and it's Nat -> Nat (because fac 1 \= 2).
-      right  -- we can find  A right using coe. And that value will be Empty according to the definition of `A`, because suc 1 = 2
+--\func fac/=suc1 (p : fac = suc) : Empty =>
+--  \let
+--    | A (i : I) : \Type
+--    => \case (p @ i) 1 \with { -- we pattern match on the parts of the equation. And return the types of the equation
+--        | 2 => Empty      -- for the right side it's empty (suc 1 = 2)
+--        | _ => Nat -> Nat -- for the other values it's a natural number function
+--        -- this pattern match is only possible if right and left are indeed different. Otherwise we won't be able to create different branches here
+--      }
+--  \in
+--    coe A
+--      fac    -- we know      A left is fac  and it's Nat -> Nat (because fac 1 \= 2).
+--      right  -- we can find  A right using coe. And that value will be Empty according to the definition of `A`, because suc 1 = 2
+
+\func fac/=suc (p : fac = suc) : Empty
+  => transport f1=1 p unit
+  \where {
+    \func f1=1(f : Nat -> Nat): \Type => \case f 1 \with {
+      | 1 => Unit
+      | _ => Empty
+    }
+  }
