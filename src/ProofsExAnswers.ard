@@ -38,6 +38,12 @@
     | not-p => \lam p => f p p
     | p => g not-p
   \in f p p
+\func t7' {P : \Type} (f : P -> P -> Nat) (g : (P -> Nat) -> P) : P =>
+  \let
+    | not-p => \lam p => f p p -- P -> Empty = Not P
+    | p => g not-p
+  \in p
+
 
 -- 8. Prove that if, for every x : Nat, P x is true, then there exists x : Nat such that P x is true.
 
