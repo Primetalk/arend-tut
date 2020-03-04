@@ -26,6 +26,11 @@
   | nil => 0
   | cons _ l => suc (length l)
 
-\func length=0->nil {A : \Type} (xs : List A) (length-xs=0 : length(xs) = 0) : xs = nil \elim xs
-  | nil      => idp
-  | cons a l => absurd (suc/=0 (idp *> length-xs=0))
+\func length=0->nil {A : \Type} (xs : List A)
+                    (length-xs=0 : length(xs) = 0) : xs = nil \elim xs
+  | nil       => nil ==< idp >== nil `qed
+  | cons _ xs =>
+   \let
+     suc=0 => suc (length xs) ==< length-xs=0 >== 0 `qed
+   \in
+     suc/=0 suc=0

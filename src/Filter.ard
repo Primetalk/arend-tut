@@ -8,9 +8,10 @@
 -- a) filter p xs is a sublist of xs,
 -- b) All elements of filter p xs satisfy the predicate p,
 -- c) Any sublist of xs with property (b) is a sublist of filter p xs.
+-- c') For each element x with proof p x = true -> x is in filter p xs.
 -- d) Order is preserved
 \func filter {A : \Type} (as : List A) (p : A -> Bool) : List A \elim as
-  | nil => nil
+  | nil       => nil
   | cons a as =>
   \let
     | filtered-tail => filter as p
@@ -27,18 +28,19 @@
   | cons x xs', cons y ys' => filtered-in  (p x = true ) (x = y) (Filtered xs' p ys')
 
 \func filter-with-proof-filtered {A : \Type} (as : List A) (p : A -> Bool) :
-  \Sigma (fl : List A) (Filtered as p fl) \elim as
-  | nil => (nil, filtered-nil)
+  \Sigma (filtered : List A) (Filtered as p filtered) \elim as
+  | nil       => (nil, filtered-nil)
   | cons a as =>
     \let
-      | fl => filter-with-proof-filtered as p
-      | pa => p a
-    \in \case f(pa) \with {
-      | inr pa=false => (       fl.1, filtered-out pa=false     fl.2)
-      | inl pa=true  => (cons a fl.1, filtered-in  pa=true  idp fl.2)
-    }
+      (filtered, filtered-proof) => filter-with-proof-filtered as p
+    \in
+      \case bool-proof(p a) \with {
+        | inr pa=false => (       filtered, filtered-out pa=false     filtered-proof)
+        | inl pa=true  => (cons a filtered, filtered-in  pa=true  idp filtered-proof)
+      }
   \where{
-    \func f (b : Bool) : (b = true) `Or` (b = false)
-      | true  => inl idp
-      | false => inr idp
+    -- convert boolean to one of the equalities
+    \func bool-proof (b : Bool) : (b = true) `Or` (b = false)
+      | true  => inl (true  ==< idp >== true  `qed)
+      | false => inr (false ==< idp >== false `qed)
   }
